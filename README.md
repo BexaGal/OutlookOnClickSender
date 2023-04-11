@@ -1,2 +1,3 @@
 # OutlookOnClickSender
-This... Thing... sends a letter formed using template through Outlook
+
+This code is under MIT license protection. Feel free to use)

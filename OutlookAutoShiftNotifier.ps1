@@ -1,4 +1,4 @@
-Add-Type -Path $env:WINDIR\assembly\GAC_MSIL\office\15.0.0.0__71e9bce111e9429c\office.dll #Сука, кто, блять, решил, что добавлять это в PATH не нужно?!!
+#Add-Type -Path $env:WINDIR\assembly\GAC_MSIL\office\15.0.0.0__71e9bce111e9429c\office.dll #Сука, кто, блять, решил, что добавлять это в PATH не нужно?!!
 Add-Type -Path $env:WINDIR\assembly\GAC_MSIL\Microsoft.Office.Interop.Outlook\15.0.0.0__71e9bce111e9429c\Microsoft.Office.Interop.Outlook.dll #API of Outlook
 #It is shit that these DLLs contained in .Net Framework, not in .NET Core. Fuck...
 
@@ -8,7 +8,7 @@ if (!(test-path ./outlooksendermailconf.hash)){                  # First we shou
     $coalias = Read-Host "Write addressee alias"                # get alias of addressee from user
     $coaddress = Read-Host "Write E-mail address of $coalias"   # and it's E-mail
 @"
-@{
+[ordered]@{
     "$coalias"="$coaddress"
 }
 "@ | out-file ./outlooksendermailconf.hash
@@ -17,7 +17,7 @@ Write-Host "FOR ADDING MORE ENTRIES PLEASE EDIT THE CONFIG MANUALLY"
 }
 
 $hashcnfg = (Get-Content .\outlooksendermailconf.hash | Out-String)     # Here we utilise this config file, extracting the hashtable to a variable
-$hashcnfg = ( Invoke-Expression $hashcnfg )
+$hashcnfg = ( Invoke-Expression $hashcnfg )                             # Why the fck we even need to do that?! Why it just can't get hashtable straight from a file???
 
 $Outlook = New-Object -comobject Outlook.Application                                                # create an outlook instance
 $namespace = $Outlook.GetNameSpace("MAPI")                                                          # MAPI namespace is used only for user's E-Mail extraction
@@ -39,10 +39,17 @@ if ($destiny -eq "1"){
         exit
     }
 }
-Write-Host "Addressees:"                            # Getting addressees' mailboxes
-$hashcnfg
 
-$adrread = Read-Host -prompt "Choose addressee"     # Yeah
+Write-Host "Addressees:"                            # Getting addressees' mailboxes
+$hashcnfg | Format-Table -Wrap
+
+if ($hashcnfg.Count -ne 1){                             # Check if there is only one pair in hashtable 
+    $adrread = Read-Host -prompt "Choose addressee"     # If not, then user chooses addressee
+}
+else {
+    $adrread = $hashcnfg[0]                             # Elseway programm does it itself
+}
+
 
 $datet = Get-date -Format "dd.MM"                   # Getting current date
 $Submess = "Смена, $datet"                          # We conseal it in the variable, containing subject

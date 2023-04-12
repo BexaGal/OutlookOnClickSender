@@ -1,4 +1,3 @@
-#Add-Type -Path $env:WINDIR\assembly\GAC_MSIL\office\15.0.0.0__71e9bce111e9429c\office.dll #Сука, кто, блять, решил, что добавлять это в PATH не нужно?!!
 Add-Type -Path $env:WINDIR\assembly\GAC_MSIL\Microsoft.Office.Interop.Outlook\15.0.0.0__71e9bce111e9429c\Microsoft.Office.Interop.Outlook.dll #API of Outlook
 #It is shit that these DLLs contained in .Net Framework, not in .NET Core. Fuck...
 
@@ -26,6 +25,19 @@ $ebox = ((($namespace.Accounts | Select-Object {$_.DisplayName}) | ConvertTo-Csv
 Write-Host MAILBOX: $ebox                                                                           # Why tho... Well, in case if user's Outlook have more than one mailbox
                                                                                                     # So user will see that letter will be sent form wrong box. Ih he/she is not blind, ofc
 
+Write-Host "Addressees:"                            # Getting addressees' mailboxes
+$hashcnfg | Format-Table -Wrap
+
+if ($hashcnfg.Count -ne 1){                            # Check if there is only one pair in hashtable 
+    $taread = Read-Host -prompt "Choose addressee"     # If not, then user chooses addressee
+    $adrread = $hashcnfg.$taread
+}
+else {
+    $adrread = $hashcnfg[0]                             # Elseway programm does it itself
+    Write-Host "Autosend to: " $adrread ". Add entries to outlooksendermailconf.hash to have more recipients"
+}
+
+
 Write-Host "Choose your destiny"                                                # Choosing template to apply
 $destiny = Read-Host -prompt "1 - arriving to shift, 2 - ending shift"
 if ($destiny -eq "1"){
@@ -40,22 +52,13 @@ if ($destiny -eq "1"){
     }
 }
 
-Write-Host "Addressees:"                            # Getting addressees' mailboxes
-$hashcnfg | Format-Table -Wrap
-
-if ($hashcnfg.Count -ne 1){                             # Check if there is only one pair in hashtable 
-    $adrread = Read-Host -prompt "Choose addressee"     # If not, then user chooses addressee
-}
-else {
-    $adrread = $hashcnfg[0]                             # Elseway programm does it itself
-}
-
 
 $datet = Get-date -Format "dd.MM"                   # Getting current date
 $Submess = "Смена, $datet"                          # We conseal it in the variable, containing subject
 
 $message = $Outlook.CreateItem(0)                   # Creating letter instance
-$message.To = $hashcnfg.$adrread                    # filling addresee, subject and body of the letter
+Write-Host "Sending letter to: "$adrread
+$message.To = "$adrread"                              # filling addresee, subject and body of the letter
 $message.Subject = $Submess
 $message.Body = $template
 $message.Send()                                     # Sending to addressee

@@ -43,7 +43,7 @@ $destiny = Read-Host -prompt "1 - arriving to shift, 2 - ending shift"
 if ($destiny -eq "1"){
     $template = "Уведомляю о присутствии себя на смене."
 }elseif ($destiny -eq "2"){
-    $template = "Уведомляю о уходе со смены."
+    $template = "Уведомляю об уходе со смены."
 }else{
     if (Read-Host -prompt "Are you an idiot?"){
         Write-Host "Whatever... Do it again..."

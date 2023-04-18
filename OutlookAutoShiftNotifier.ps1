@@ -15,8 +15,24 @@ Write-Host "FOR ADDING MORE ENTRIES PLEASE EDIT THE CONFIG MANUALLY"
 # here we just created first entry of the config file. Config contains raw hashtable.
 }
 
+if (!(test-path ./msgs.hash)){
+    Write-Host "No messages file found. Creating one."
+    New-Item ./msgs.hash
+    $tempv1 = Read-Host -prompt "Write message's name"
+    $tempb2 = Read-Host -prompt "Write message body"
+@"
+[ordered]@{
+    "$tempv1"="$tempb2"
+}
+"@ | out-file ./msgs.hash
+Write-Host "FOR ADDING MORE ENTRIES PLEASE EDIT THE CONFIG MANUALLY"
+}
+
 $hashcnfg = (Get-Content .\outlooksendermailconf.hash | Out-String)     # Here we utilise this config file, extracting the hashtable to a variable
 $hashcnfg = ( Invoke-Expression $hashcnfg )                             # Why the fck we even need to do that?! Why it just can't get hashtable straight from a file???
+
+$messagedata = (Get-Content .\msgs.hash | Out-String)
+$messagedata = ( Invoke-Expression $messagedata )                        
 
 $Outlook = New-Object -comobject Outlook.Application                                                # create an outlook instance
 $namespace = $Outlook.GetNameSpace("MAPI")                                                          # MAPI namespace is used only for user's E-Mail extraction
@@ -37,19 +53,18 @@ else {
     Write-Host "Autosend to: " $adrread ". Add entries to outlooksendermailconf.hash to have more recipients"
 }
 
+Write-host "Here is messages' list:"
+$messagedata | ft -wrap
 
 Write-Host "Choose your destiny"                                                # Choosing template to apply
-$destiny = Read-Host -prompt "1 - arriving to shift, 2 - ending shift"
-if ($destiny -eq "1"){
-    $template = "Уведомляю о присутствии себя на смене."
-}elseif ($destiny -eq "2"){
-    $template = "Уведомляю об уходе со смены."
-}else{
-    if (Read-Host -prompt "Are you an idiot?"){
-        Write-Host "Whatever... Do it again..."
-        start-sleep -seconds 3
-        exit
-    }
+$destiny = Read-Host -prompt "Select message alias"
+if ($messagedata.keys -contains $destiny){
+    $template = $messagedata.$destiny
+    Write-host "Message:"
+}else {
+    Write-Host "No such message. Abort."
+    Start-sleep -seconds 3
+    exit
 }
 
 

@@ -1,38 +1,35 @@
 Add-Type -Path $env:WINDIR\assembly\GAC_MSIL\Microsoft.Office.Interop.Outlook\15.0.0.0__71e9bce111e9429c\Microsoft.Office.Interop.Outlook.dll #API of Outlook
 #It is shit that these DLLs contained in .Net Framework, not in .NET Core. Fuck...
 
-if (!(test-path ./outlooksendermailconf.hash)){                  # First we should find out if config file exists.
+if (!(test-path ./boxlistsrc.json)){                  # First we should find out if config file exists.
     Write-Host "No config created. Creating one."               # if it deosn't, we create it in the current directory (where the file located).
-    New-Item ./outlooksendermailconf.hash 
+    New-Item ./boxlistsrc.json
     $coalias = Read-Host "Write addressee alias"                # get alias of addressee from user
     $coaddress = Read-Host "Write E-mail address of $coalias"   # and it's E-mail
 @"
-[ordered]@{
-    "$coalias"="$coaddress"
+{
+    "$coalias":"$coaddress"
 }
-"@ | out-file ./outlooksendermailconf.hash
+"@ | out-file ./boxlistsrc.json
 Write-Host "FOR ADDING MORE ENTRIES PLEASE EDIT THE CONFIG MANUALLY"
-# here we just created first entry of the config file. Config contains raw hashtable.
+# here we just created first entry of the config file. Config contains JSON entries which are to be translated to Hash.
 }
 
-if (!(test-path ./msgs.hash)){
+if (!(test-path ./mesg.json)){
     Write-Host "No messages file found. Creating one."
-    New-Item ./msgs.hash
+    New-Item ./mesg.json
     $tempv1 = Read-Host -prompt "Write message's name"
     $tempb2 = Read-Host -prompt "Write message body"
 @"
-[ordered]@{
-    "$tempv1"="$tempb2"
+{
+    "$tempv1":"$tempb2"
 }
-"@ | out-file ./msgs.hash
+"@ | out-file ./mesg.json
 Write-Host "FOR ADDING MORE ENTRIES PLEASE EDIT THE CONFIG MANUALLY"
 }
 
-$hashcnfg = (Get-Content .\outlooksendermailconf.hash | Out-String)     # Here we utilise this config file, extracting the hashtable to a variable
-$hashcnfg = ( Invoke-Expression $hashcnfg )                             # Why the fck we even need to do that?! Why it just can't get hashtable straight from a file???
-
-$messagedata = (Get-Content .\msgs.hash | Out-String)
-$messagedata = ( Invoke-Expression $messagedata )                        
+$hashcnfg =  ConvertFrom-Json -AsHashtable (Get-Content -raw .\boxlistsrc.json)                     # Here we extrect mailboxes from JSON file. Much safer way than invoking hashtable.
+$messagedata = ConvertFrom-Json -AsHashtable (Get-Content -raw .\mesg.json)                         
 
 $Outlook = New-Object -comobject Outlook.Application                                                # create an outlook instance
 $namespace = $Outlook.GetNameSpace("MAPI")                                                          # MAPI namespace is used only for user's E-Mail extraction
@@ -49,8 +46,9 @@ if ($hashcnfg.Count -ne 1){                            # Check if there is only 
     $adrread = $hashcnfg.$taread
 }
 else {
-    $adrread = $hashcnfg[0]                             # Elseway programm does it itself
-    Write-Host "Autosend to: " $adrread ". Add entries to outlooksendermailconf.hash to have more recipients"
+    $temparr = @(); ($hashcnfg.GetEnumerator()) | foreach {Write-Host $_.Key; $temparr += ($_.Key)}         # Extraction of first element's key. Yes, looks like shit...
+    $adrread = $hashcnfg.($temparr[0])                                                                      # Elseway programm does it itself
+    Write-Host "Autosend to: " $adrread ". Add entries to boxlistsrc.json to have more recipients"
 }
 
 Write-host "Here is messages' list:"

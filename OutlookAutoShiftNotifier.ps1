@@ -28,8 +28,13 @@ if (!(test-path ./mesg.json)){
 Write-Host "FOR ADDING MORE ENTRIES PLEASE EDIT THE CONFIG MANUALLY"
 }
 
-$hashcnfg =  ConvertFrom-Json -AsHashtable (Get-Content -raw .\boxlistsrc.json)                     # Here we extrect mailboxes from JSON file. Much safer way than invoking hashtable.
-$messagedata = ConvertFrom-Json -AsHashtable (Get-Content -raw .\mesg.json)                         
+$hashcnfg = @{}                                                                 # Here we extrect mailboxes from JSON file. Much safer way than invoking hashtable.
+(ConvertFrom-Json (get-content -raw .\boxlistsrc.json)).psobject.properties | Foreach { $hashcnfg[$_.Name] = $_.Value }
+$messagedata = @{}
+(ConvertFrom-Json (get-content -raw .\mesg.json)).psobject.properties | Foreach { $messagedata[$_.Name] = $_.Value }    
+
+                                # I aggree that this shit is fucked up. But I can't convert posh7 to executable due to the fact that ps2exe does work upon posh5.
+                                # I'd really liked to use instead of that shit just ConvertFrom-Json -AsHashtable (Get-Content -raw .\mesg.json) .
 
 $Outlook = New-Object -comobject Outlook.Application                                                # create an outlook instance
 $namespace = $Outlook.GetNameSpace("MAPI")                                                          # MAPI namespace is used only for user's E-Mail extraction

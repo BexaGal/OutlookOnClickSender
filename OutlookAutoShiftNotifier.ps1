@@ -29,9 +29,9 @@ Write-Host "FOR ADDING MORE ENTRIES PLEASE EDIT THE CONFIG MANUALLY"
 }
 
 $hashcnfg = @{}                                                                 # Here we extrect mailboxes from JSON file. Much safer way than invoking hashtable.
-(ConvertFrom-Json (get-content -raw .\boxlistsrc.json)).psobject.properties | Foreach { $hashcnfg[$_.Name] = $_.Value }
+(ConvertFrom-Json (get-content -raw .\boxlistsrc.json)).psobject.properties | ForEach-Object { $hashcnfg[$_.Name] = $_.Value }
 $messagedata = @{}
-(ConvertFrom-Json (get-content -raw .\mesg.json)).psobject.properties | Foreach { $messagedata[$_.Name] = $_.Value }    
+(ConvertFrom-Json (get-content -raw .\mesg.json)).psobject.properties | ForEach-Object { $messagedata[$_.Name] = $_.Value }    
 
                                 # I aggree that this shit is fucked up. But I can't convert posh7 to executable due to the fact that ps2exe does work upon posh5.
                                 # I'd really liked to use instead of that shit just ConvertFrom-Json -AsHashtable (Get-Content -raw .\mesg.json) .
@@ -51,13 +51,13 @@ if ($hashcnfg.Count -ne 1){                            # Check if there is only 
     $adrread = $hashcnfg.$taread
 }
 else {
-    $temparr = @(); ($hashcnfg.GetEnumerator()) | foreach {Write-Host $_.Key; $temparr += ($_.Key)}         # Extraction of first element's key. Yes, looks like shit...
+    $temparr = @(); ($hashcnfg.GetEnumerator()) | ForEach-Object {Write-Host $_.Key; $temparr += ($_.Key)}         # Extraction of first element's key. Yes, looks like shit...
     $adrread = $hashcnfg.($temparr[0])                                                                      # Elseway programm does it itself
     Write-Host "Autosend to: " $adrread ". Add entries to boxlistsrc.json to have more recipients"
 }
 
 Write-host "Here is messages' list:"
-$messagedata | ft -wrap
+$messagedata | Format-Table -wrap
 
 Write-Host "Choose your destiny"                                                # Choosing template to apply
 $destiny = Read-Host -prompt "Select message alias"
